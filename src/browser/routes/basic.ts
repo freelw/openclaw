@@ -1,3 +1,4 @@
+import { createSubsystemLogger } from "../../logging/subsystem.js";
 import { getChromeMcpPid } from "../chrome-mcp.js";
 import { resolveBrowserExecutableForPlatform } from "../chrome.executables.js";
 import { toBrowserErrorResponse } from "../errors.js";
@@ -7,6 +8,8 @@ import type { BrowserRouteContext, ProfileContext } from "../server-context.js";
 import { resolveProfileContext } from "./agent.shared.js";
 import type { BrowserRequest, BrowserResponse, BrowserRouteRegistrar } from "./types.js";
 import { getProfileContext, jsonError, toStringOrEmpty } from "./utils.js";
+
+const logRoutes = createSubsystemLogger("browser").child("routes");
 
 function handleBrowserRouteError(res: BrowserResponse, err: unknown) {
   const mapped = toBrowserErrorResponse(err);
@@ -61,6 +64,7 @@ export function registerBrowserBasicRoutes(app: BrowserRouteRegistrar, ctx: Brow
 
   // Get status (profile-aware)
   app.get("/", async (req, res) => {
+    logRoutes.error("[wangli dbg] browser basic route /");
     let current: ReturnType<typeof ctx.state>;
     try {
       current = ctx.state();
@@ -90,6 +94,11 @@ export function registerBrowserBasicRoutes(app: BrowserRouteRegistrar, ctx: Brow
         if (detected) {
           detectedBrowser = detected.kind;
           detectedExecutablePath = detected.path;
+          logRoutes.debug(
+            `[wangli dbg] browser executable detected: kind=${detected.kind} path=${detectedExecutablePath}`,
+          );
+        } else {
+          logRoutes.debug("[wangli dbg] no browser executable detected");
         }
       } catch (err) {
         detectError = String(err);

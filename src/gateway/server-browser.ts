@@ -1,4 +1,5 @@
 import { isTruthyEnvValue } from "../infra/env.js";
+import { logError } from "../logger.js";
 
 export type BrowserControlServer = {
   stop: () => Promise<void>;
@@ -6,6 +7,7 @@ export type BrowserControlServer = {
 
 export async function startBrowserControlServerIfEnabled(): Promise<BrowserControlServer | null> {
   if (isTruthyEnvValue(process.env.OPENCLAW_SKIP_BROWSER_CONTROL_SERVER)) {
+    logError("browser control server skipped (OPENCLAW_SKIP_BROWSER_CONTROL_SERVER)");
     return null;
   }
   // Lazy import: keeps startup fast, but still bundles for the embedded
@@ -24,8 +26,10 @@ export async function startBrowserControlServerIfEnabled(): Promise<BrowserContr
       ? (mod as { stopBrowserControlService: () => Promise<void> }).stopBrowserControlService
       : (mod as { stopBrowserControlServer?: () => Promise<void> }).stopBrowserControlServer;
   if (!start) {
+    logError("browser control server not started (no start function in module)");
     return null;
   }
   await start();
+  logError("[wangli dbg] browser control server started");
   return { stop: stop ?? (async () => {}) };
 }

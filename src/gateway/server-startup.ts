@@ -64,6 +64,7 @@ export async function startGatewaySidecars(params: {
   // Start OpenClaw browser control server (unless disabled via config).
   let browserControl: Awaited<ReturnType<typeof startBrowserControlServerIfEnabled>> = null;
   try {
+    params.logBrowser.error("[wangli dbg] starting browser control server");
     browserControl = await startBrowserControlServerIfEnabled();
   } catch (err) {
     params.logBrowser.error(`server failed to start: ${String(err)}`);

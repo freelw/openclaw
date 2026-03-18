@@ -21,6 +21,7 @@ import {
 } from "../../hooks/message-hook-mappers.js";
 import { isDiagnosticsEnabled } from "../../infra/diagnostic-events.js";
 import { getSessionBindingService } from "../../infra/outbound/session-binding-service.js";
+import { logError } from "../../logger.js";
 import {
   logMessageProcessed,
   logMessageQueued,
@@ -125,6 +126,7 @@ export async function dispatchReplyFromConfig(params: {
   replyResolver?: typeof getReplyFromConfig;
 }): Promise<DispatchFromConfigResult> {
   const { ctx, cfg, dispatcher } = params;
+  logError("[wangli dbg] dispatchReplyFromConfig entered");
   const diagnosticsEnabled = isDiagnosticsEnabled(cfg);
   const channel = String(ctx.Surface ?? ctx.Provider ?? "unknown").toLowerCase();
   const chatId = ctx.To ?? ctx.From;
@@ -179,6 +181,7 @@ export async function dispatchReplyFromConfig(params: {
   };
 
   if (shouldSkipDuplicateInbound(ctx)) {
+    logError("[wangli dbg] dispatchReplyFromConfig early return: duplicate");
     recordProcessed("skipped", { reason: "duplicate" });
     return { queuedFinal: false, counts: dispatcher.getQueuedCounts() };
   }
@@ -342,6 +345,7 @@ export async function dispatchReplyFromConfig(params: {
 
     switch (targetedClaimOutcome.status) {
       case "handled": {
+        logError("[wangli dbg] dispatchReplyFromConfig early return: plugin-bound-handled");
         markIdle("plugin_binding_dispatch");
         recordProcessed("completed", { reason: "plugin-bound-handled" });
         return { queuedFinal: false, counts: dispatcher.getQueuedCounts() };
@@ -412,10 +416,12 @@ export async function dispatchReplyFromConfig(params: {
   }
 
   markProcessing();
+  logError("[wangli dbg] dispatchReplyFromConfig entering try block");
 
   try {
     const fastAbort = await tryFastAbortFromMessage({ ctx, cfg });
     if (fastAbort.handled) {
+      logError("[wangli dbg] dispatchReplyFromConfig early return: fastAbort");
       const payload = {
         text: formatAbortReplyText(fastAbort.stoppedSubagents),
       } satisfies ReplyPayload;
@@ -467,6 +473,7 @@ export async function dispatchReplyFromConfig(params: {
       chatType: sessionStoreEntry.entry?.chatType,
     });
     if (sendPolicy === "deny" && !bypassAcpForCommand) {
+      logError("[wangli dbg] dispatchReplyFromConfig early return: sendPolicy deny");
       logVerbose(
         `Send blocked by policy for session ${sessionStoreEntry.sessionKey ?? sessionKey ?? "unknown"}`,
       );
@@ -542,7 +549,11 @@ export async function dispatchReplyFromConfig(params: {
       systemEvent: shouldRouteToOriginating,
     });
 
-    const replyResult = await (params.replyResolver ?? getReplyFromConfig)(
+    const replyResolverFn = params.replyResolver ?? getReplyFromConfig;
+    logError(
+      "[wangli dbg] dispatch-from-config: about to call getReplyFromConfig (native agent path)",
+    );
+    const replyResult = await replyResolverFn(
       ctx,
       {
         ...params.replyOptions,

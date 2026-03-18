@@ -81,7 +81,9 @@ export async function startBrowserControlServerFromConfig(): Promise<BrowserServ
   });
 
   const authMode = browserAuth.token ? "token" : browserAuth.password ? "password" : "off";
-  logServer.info(`Browser control listening on http://127.0.0.1:${port}/ (auth=${authMode})`);
+  logServer.info(
+    `[wangli dbg] Browser control listening on http://127.0.0.1:${port}/ (auth=${authMode})`,
+  );
   return state;
 }
 

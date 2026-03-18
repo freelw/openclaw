@@ -25,6 +25,7 @@ import {
   untrackSessionBrowserTab,
 } from "../../browser/session-tab-registry.js";
 import { loadConfig } from "../../config/config.js";
+import { logDebug, logError } from "../../logger.js";
 import {
   executeActAction,
   executeConsoleAction,
@@ -134,6 +135,9 @@ async function resolveBrowserNodeTarget(params: {
   target?: "sandbox" | "host" | "node";
   sandboxBridgeUrl?: string;
 }): Promise<BrowserNodeTarget | null> {
+  logDebug(
+    `[wangli dbg] resolveBrowserNodeTarget requestedNode=${params.requestedNode ?? "(none)"} target=${params.target ?? "(none)"} sandboxBridgeUrl=${params.sandboxBridgeUrl ? "set" : "unset"}`,
+  );
   const cfg = loadConfig();
   const policy = cfg.gateway?.nodes?.browser;
   const mode = policy?.mode ?? "auto";
@@ -166,7 +170,11 @@ async function resolveBrowserNodeTarget(params: {
   if (requested) {
     const nodeId = resolveNodeIdFromList(browserNodes, requested, false);
     const node = browserNodes.find((entry) => entry.nodeId === nodeId);
-    return { nodeId, label: node?.displayName ?? node?.remoteIp ?? nodeId };
+    const result = { nodeId, label: node?.displayName ?? node?.remoteIp ?? nodeId };
+    logDebug(
+      `resolveBrowserNodeTarget resolved to node nodeId=${result.nodeId} label=${result.label}`,
+    );
+    return result;
   }
 
   const selected = selectDefaultNodeFromList(browserNodes, {
@@ -176,10 +184,14 @@ async function resolveBrowserNodeTarget(params: {
 
   if (params.target === "node") {
     if (selected) {
-      return {
+      const result = {
         nodeId: selected.nodeId,
         label: selected.displayName ?? selected.remoteIp ?? selected.nodeId,
       };
+      logDebug(
+        `resolveBrowserNodeTarget resolved to node nodeId=${result.nodeId} label=${result.label}`,
+      );
+      return result;
     }
     throw new Error(
       `Multiple browser-capable nodes connected (${browserNodes.length}). Set gateway.nodes.browser.node or pass node=<id>.`,
@@ -191,10 +203,14 @@ async function resolveBrowserNodeTarget(params: {
   }
 
   if (selected) {
-    return {
+    const result = {
       nodeId: selected.nodeId,
       label: selected.displayName ?? selected.remoteIp ?? selected.nodeId,
     };
+    logDebug(
+      `resolveBrowserNodeTarget resolved to node nodeId=${result.nodeId} label=${result.label}`,
+    );
+    return result;
   }
   return null;
 }
@@ -298,6 +314,9 @@ export function createBrowserTool(opts?: {
   allowHostControl?: boolean;
   agentSessionKey?: string;
 }): AnyAgentTool {
+  logError(
+    `[wangli dbg] createBrowserTool sandboxBridgeUrl=${opts?.sandboxBridgeUrl ? "set" : "unset"} allowHostControl=${opts?.allowHostControl ?? "(default)"} agentSessionKey=${opts?.agentSessionKey ? "set" : "unset"}`,
+  );
   const targetDefault = opts?.sandboxBridgeUrl ? "sandbox" : "host";
   const hostHint =
     opts?.allowHostControl === false ? "Host target blocked by policy." : "Host target allowed.";

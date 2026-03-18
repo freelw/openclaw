@@ -1,4 +1,5 @@
 import type { OpenClawConfig } from "../config/config.js";
+import { logError } from "../logger.js";
 import { resolvePluginTools } from "../plugins/tools.js";
 import { getActiveRuntimeWebToolsMetadata } from "../secrets/runtime.js";
 import type { GatewayMessageChannel } from "../utils/message-channel.js";
@@ -84,6 +85,16 @@ export function createOpenClawTools(
     allowGatewaySubagentBinding?: boolean;
   } & SpawnedToolContext,
 ): AnyAgentTool[] {
+  logError(
+    [
+      "[wangli dbg] createOpenClawTools",
+      `sandboxed=${options?.sandboxed ?? "(unset)"}`,
+      `agentDir=${options?.agentDir ? "set" : "unset"}`,
+      `workspaceDir=${options?.workspaceDir ?? "(unset)"}`,
+      `spawnWorkspaceDir=${options?.spawnWorkspaceDir ?? "(unset)"}`,
+      `agentSessionKey=${options?.agentSessionKey ? "set" : "unset"}`,
+    ].join(" "),
+  );
   const workspaceDir = resolveWorkspaceRoot(options?.workspaceDir);
   const spawnWorkspaceDir = resolveWorkspaceRoot(
     options?.spawnWorkspaceDir ?? options?.workspaceDir,
@@ -138,6 +149,7 @@ export function createOpenClawTools(
         requireExplicitTarget: options?.requireExplicitMessageTarget,
         requesterSenderId: options?.requesterSenderId ?? undefined,
       });
+
   const tools: AnyAgentTool[] = [
     createBrowserTool({
       sandboxBridgeUrl: options?.sandboxBrowserBridgeUrl,

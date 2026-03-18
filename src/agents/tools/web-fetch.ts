@@ -2,7 +2,7 @@ import { Type } from "@sinclair/typebox";
 import type { OpenClawConfig } from "../../config/config.js";
 import { normalizeResolvedSecretInputString } from "../../config/types.secrets.js";
 import { SsrFBlockedError } from "../../infra/net/ssrf.js";
-import { logDebug } from "../../logger.js";
+import { logDebug, logError } from "../../logger.js";
 import type { RuntimeWebFetchFirecrawlMetadata } from "../../secrets/runtime-web-tools.js";
 import { wrapExternalContent, wrapWebContent } from "../../security/external-content.js";
 import { normalizeSecretInput } from "../../utils/normalize-secret-input.js";
@@ -736,6 +736,9 @@ export function createWebFetchTool(options?: {
   sandboxed?: boolean;
   runtimeFirecrawl?: RuntimeWebFetchFirecrawlMetadata;
 }): AnyAgentTool | null {
+  logError(
+    `[wangli dbg] createWebFetchTool sandboxed=${options?.sandboxed ?? "(unset)"} runtimeFirecrawl.active=${options?.runtimeFirecrawl?.active ?? "(unset)"}`,
+  );
   const fetch = resolveFetchConfig(options?.config);
   if (!resolveFetchEnabled({ fetch, sandboxed: options?.sandboxed })) {
     return null;

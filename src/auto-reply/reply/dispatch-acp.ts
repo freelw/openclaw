@@ -16,6 +16,7 @@ import { logVerbose } from "../../globals.js";
 import { getSessionBindingService } from "../../infra/outbound/session-binding-service.js";
 import { generateSecureUuid } from "../../infra/secure-random.js";
 import { prefixSystemMessage } from "../../infra/system-message.js";
+import { logError } from "../../logger.js";
 import { applyMediaUnderstanding } from "../../media-understanding/apply.js";
 import {
   normalizeAttachmentPath,
@@ -214,6 +215,9 @@ export async function tryDispatchAcpReply(params: {
   if (acpResolution.kind === "none") {
     return null;
   }
+  logError(
+    `[wangli dbg] 1 tryDispatchAcpReply taking ACP path sessionKey=${sessionKey} kind=${acpResolution.kind}`,
+  );
 
   let queuedFinal = false;
   const delivery = createAcpDispatchDeliveryCoordinator({
